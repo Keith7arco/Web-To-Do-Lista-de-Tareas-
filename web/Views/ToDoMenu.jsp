@@ -15,6 +15,8 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+        <script src="${pageContext.servletContext.contextPath}/js/todo.js"></script> 
     </head>
     <body style="background-color: #184770;">
         <section class="vh-100">
@@ -29,11 +31,11 @@
                                 </p>
 
                                 <div>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                    <button type="button" id="btnAgregarM" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
                                         <i class="fas fa-plus"></i>
                                     </button>       
                                 </div>
-                                <!-- Modal -->
+                                <!-- Modal Agregar-->
                                 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                                     <div class="modal-dialog modal-lg">
                                         <div class="modal-content">
@@ -46,10 +48,11 @@
                                                     <div class="pb-2">
                                                         <div class="card">
                                                             <div class="card-body">
-                                                                <div class="d-flex flex-row align-items-center">
+                                                                <div class="d-flex flex-row align-items-center">                                                                  
                                                                     <input type="text" name="txtTitulo" id="txtTitulo" class="form-control form-control"  maxlength="30"
                                                                            style="font-weight: bold;"
                                                                            placeholder="Titulo...">
+                                                                    <input class="id" name="txtId" id="txtId" style="opacity: 0;">
                                                                 </div>                               
                                                                 <div class="d-flex flex-row align-items-center">
                                                                     <textarea type="text" name="txtDescripcion" id="txtDescripcion" class="form-control form-control"
@@ -65,7 +68,9 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cerrar</button>
-                                                        <button type="submit" name="btnAdd" class="btn btn-primary">Guardar</button>
+                                                        <button type="submit" name="btnAdd" id="btnAgregar" class="btn btn-primary">Guardar</button>
+                                                        <button type="submit" name="btnEdit" id="btnEditar" class="btn btn-info">Editar</button>
+                                                        <button type="submit" name="btnDelete" id="btnEliminar" class="btn btn-dark">Eliminar</button>
                                                     </div>
                                                 </form>
                                             </div>
@@ -79,27 +84,35 @@
                                 <hr class="my-4">          
                                 <div class="d-flex justify-content-end align-items-center mb-4 pt-2 pb-3">
                                     <p class="small mb-0 me-2 text-muted">Filtro</p>
-                                    <select class="select">
+
+                                    <select id="filtroSelect" class="select" name="filtro">
+                                        <option value="0">En Progreso</option>
+                                        <option value="1">Pendiente</option>
+                                        <option value="2">Completado</option>
                                         <option value="3">Todos</option>
-                                        <option value="0">Completados</option>
-                                        <option value="1">En Progreso</option>
-                                        <option value="2">Vencidos</option>
                                     </select>
 
-                                    <p class="small mb-0 ms-4 me-2 text-muted">Ordenar por</p>
-                                    <select class="select">
-                                        <option value="1">Proximos</option>
-                                        <option value="2">Ultimos</option>
-                                    </select>
-                                    <a href="#!" style="color: #23af89;" data-mdb-toggle="tooltip" title="Ascending"><i
+
+
+                                    <p class="small mb-0 ms-4 me-2 text-muted">Ordenado por</p>
+                                    <a style="color: #23af89;" data-mdb-toggle="tooltip" title="Ascending"><i
                                             class="fas fa-sort-amount-down-alt ms-2"></i></a>
                                 </div>
 
                                 <%
-                                  
+                                  List<ToDo> datalist = null;
+                                  datalist = (List<ToDo>) request.getAttribute("datalist");
                                   ToDoDao dao=new ToDoDao();
-                                  List<ToDo> datalist= dao.listar();
-                                  if(datalist.isEmpty()){
+                                  if (datalist == null) {
+                                    datalist = dao.Buscar(0);
+                                  }else{
+                                    datalist = (List<ToDo>) request.getAttribute("datalist");
+                                  }
+                                  
+                                  request.getAttribute("datalist");
+  
+                                  if(datalist == null || datalist.isEmpty()){
+                                  
                                 %>
                                 <div class="text-center container d-flex justify-content-center align-items-center h-100">
                                     <p class="h1 text-center mt-3 mb-4 pb-3 text-dark">
@@ -114,6 +127,7 @@
                                     }
                                 else{
                                   for (ToDo data:datalist) {
+                                      int id = data.getIdTodo();
                                       String titulo = data.getTittle();
                                       String descripcion = data.getDescription();
                                       String fecha = data.getCompletedin().toString();
@@ -129,24 +143,27 @@
                                     </li>
                                     <li
                                         class="list-group-item px-3 py-1 d-flex align-items-center flex-grow-1 border-0 bg-transparent">
-                                        <h2 class="lead fw-bold mb-0"><%= titulo%></h2>
+                                        <p class="id" style="opacity:0;"><%= id%></p>
+                                        <h2 class="lead fw-bold mb-0 titulo"><%= titulo%></h2>
                                     </li>
 
                                     <li
                                         class="list-group-item px-3 py-1 d-flex align-items-center flex-grow-1 border-0 bg-transparent">
-                                        <h2 class="lead fw-normal mb-0"><%= descripcion%></h2>
+                                        <h2 class="lead fw-normal mb-0 descripcion"><%= descripcion%></h2>
                                     </li>
 
                                     <li class="list-group-item ps-3 pe-0 py-1 rounded-0 border-0 bg-transparent">
                                         <div class="d-flex flex-row justify-content-end mb-1">
-                                            <a href="#!" class="text-info" data-mdb-toggle="tooltip" title="Editar Tarea"><i
+                                            <a href="#!" class="text-info btnEditar" data-mdb-toggle="tooltip" title="Editar Tarea"
+                                               data-bs-toggle="modal" data-bs-target="#exampleModal"><i
                                                     class="fas fa-pencil-alt me-3"></i></a>
-                                            <a href="#!" class="text-danger" data-mdb-toggle="tooltip" title="Eliminar Tarea"><i
+                                            <a href="#!" class="text-danger btnEliminar" data-mdb-toggle="tooltip" title="Eliminar Tarea"
+                                               data-bs-toggle="modal" data-bs-target="#exampleModal"><i
                                                     class="fas fa-trash-alt"></i></a>
                                         </div>
                                         <div class="text-end text-muted">
-                                            <a href="#!" class="text-muted" data-mdb-toggle="tooltip" title="Created date">
-                                                <p class="small mb-0"><i class="fas fa-info-circle me-2"></i><%= fecha%></p>
+                                            <a class="text-muted" data-mdb-toggle="tooltip" title="Created date">
+                                                <p class="small mb-0 fecha"><i class="fas fa-info-circle me-2"></i><%= fecha%></p>
                                             </a>
                                         </div>
                                     </li>
@@ -160,6 +177,38 @@
                 </div>
             </div>
         </section>   
-                 
     </body>
+    <script>
+        $(document).ready(function () {
+            $('#filtroSelect').change(function () {
+                var selectedValue = $(this).val();
+                var storedValue = localStorage.getItem('selectedValue');
+
+                if (selectedValue !== storedValue) {
+                    // Hacer una petición al servidor solo si el valor ha cambiado
+                    $.ajax({
+                        type: 'POST',
+                        url: '${pageContext.servletContext.contextPath}/FiltroSvToDo',
+                        data: {filtro: selectedValue},
+                        success: function (response) {
+                            // Actualizar el contenido de la página con la respuesta del servidor
+                            $('body').html(response);
+                        },
+                        error: function (error) {
+                            console.log(error);
+                        }
+                    });
+
+                    // Actualizar el valor almacenado en el localStorage
+                    localStorage.setItem('selectedValue', selectedValue);
+                }
+            });
+
+            // Establecer el valor seleccionado al cargar la página
+            var storedValue = localStorage.getItem('selectedValue');
+            if (storedValue) {
+                $('#filtroSelect').val(storedValue);
+            }
+        });
+    </script>
 </html>
